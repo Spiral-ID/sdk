@@ -1,23 +1,23 @@
 pragma circom 2.0.0;
 
-// Circuito para Proof-of-Humanity usando Zero-Knowledge Proofs
-// Prova que o usuário conhece uma assinatura válida sem revelar a assinatura
+// Circuit for Proof-of-Humanity using Zero-Knowledge Proofs
+// Proves the user knows a valid signature without revealing it
 
 include "node_modules/circomlib/circuits/eddsamimc.circom";
 include "node_modules/circomlib/circuits/mimc.circom";
 
-// Template principal para Proof-of-Humanity
+// Main template for Proof-of-Humanity
 template ProofOfHumanity() {
-    signal input messageHash; // Hash da mensagem que foi assinada
-    signal input pubKeyX;     // Chave pública X do usuário
-    signal input pubKeyY;     // Chave pública Y do usuário
-    signal input R8x;         // Componente R8 da assinatura
-    signal input R8y;         // Componente R8 da assinatura
-    signal input S;          // Componente S da assinatura
+    signal input messageHash; // Hash of the signed message
+    signal input pubKeyX;     // User public key X
+    signal input pubKeyY;     // User public key Y
+    signal input R8x;         // Signature component R8x
+    signal input R8y;         // Signature component R8y
+    signal input S;          // Signature component S
     
-    signal output verified;   // Saída: 1 se verificado, 0 caso contrário
+    signal output verified;   // Output: 1 if verified, 0 otherwise
 
-    // Verificar a assinatura EdDSA com MiMC
+    // Verify the EdDSA signature with MiMC
     component verifier = EdDSAMiMCVerifier();
     
     verifier.enabled <== 1;
@@ -28,24 +28,24 @@ template ProofOfHumanity() {
     verifier.S <== S;
     verifier.M <== messageHash;
 
-    // Se a verificação passar, output = 1
+    // If verification passes, output = 1
     verified <== verifier.out;
 }
 
-// Template para gerar proof de idade mínima (exemplo: maior de 18 anos)
+// Template to generate minimum-age proof (e.g., 18+)
 template AgeProof(minAge) {
-    signal input age;          // Idade real (privada)
-    signal input currentYear; // Ano atual (público)
-    signal input birthYear;    // Ano de nascimento (privado)
+    signal input age;          // Actual age (private)
+    signal input currentYear; // Current year (public)
+    signal input birthYear;    // Birth year (private)
     
-    signal output isAdult;    // 1 se maior de idade, 0 caso contrário
+    signal output isAdult;    // 1 if adult, 0 otherwise
 
-    // Verificar se age >= minAge sem revelar a idade exata
+    // Check age >= minAge without revealing exact age
     component ageCheck = GreaterEqThan(32);
     ageCheck.in[0] <== age;
     ageCheck.in[1] <== minAge;
     
-    // Verificar consistência: age == currentYear - birthYear
+    // Consistency check: age == currentYear - birthYear
     component yearDiff = Subtract(32);
     yearDiff.in[0] <== currentYear;
     yearDiff.in[1] <== birthYear;
@@ -54,11 +54,11 @@ template AgeProof(minAge) {
     ageConsistency.in[0] <== age;
     ageConsistency.in[1] <== yearDiff.out;
     
-    // A idade é válida se for >= minAge e consistente
+    // Age is valid if >= minAge and consistent
     isAdult <== ageCheck.out * ageConsistency.out;
 }
 
-// Circuito principal que combina proof-of-humanity com atributos
+// Main circuit that combines proof-of-humanity with attributes
 template SpiralIDProof() {
     signal input messageHash;
     signal input pubKeyX;
@@ -66,14 +66,14 @@ template SpiralIDProof() {
     signal input R8x;
     signal input R8y;
     signal input S;
-    signal input age;          // Opcional: prova de idade
-    signal input currentYear; // Ano atual
-    signal input birthYear;   // Ano nascimento
+    signal input age;          // Optional: age proof
+    signal input currentYear; // Current year
+    signal input birthYear;   // Birth year
     
     signal output humanVerified;
     signal output isAdult;
 
-    // Proof-of-Humanity básico
+    // Basic Proof-of-Humanity
     component humanityProof = ProofOfHumanity();
     humanityProof.messageHash <== messageHash;
     humanityProof.pubKeyX <== pubKeyX;
@@ -84,7 +84,7 @@ template SpiralIDProof() {
     
     humanVerified <== humanityProof.verified;
 
-    // Proof de idade (opcional)
+    // Optional age proof
     component ageProof = AgeProof(18);
     ageProof.age <== age;
     ageProof.currentYear <== currentYear;
@@ -93,7 +93,7 @@ template SpiralIDProof() {
     isAdult <== ageProof.isAdult;
 }
 
-// Componentes auxiliares
+// Helper components
 template Equal(n) {
     signal input in[2];
     signal output out;
